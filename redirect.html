@@ -37,13 +37,14 @@
       }
 
       const parts = decoded.split('|');
-      const [type, id, poster, backdrop, season, episode] = parts;
+      const [type, id, title, poster, backdrop, season, episode] = parts;
 
       let deepLink = '';
       let fallback = '';
 
       const query = buildQuery({
         id,
+        title,
         poster,
         backdrop,
         season,
