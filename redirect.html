@@ -6,16 +6,20 @@
   <title>Redirecting...</title>
   <script>
     function base64UrlDecode(str) {
-      // Add padding manually if needed
       str = str.replace(/-/g, '+').replace(/_/g, '/');
-      while (str.length % 4 !== 0) {
-        str += '=';
-      }
+      while (str.length % 4 !== 0) str += '=';
       try {
         return atob(str);
       } catch (_) {
         return null;
       }
+    }
+
+    function buildQuery(params) {
+      return Object.entries(params)
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+        .join('&');
     }
 
     function redirect() {
@@ -33,38 +37,42 @@
       }
 
       const parts = decoded.split('|');
-      const type = parts[0];
-      const id = parts[1];
+      const [type, id, poster, backdrop, season, episode] = parts;
 
       let deepLink = '';
       let fallback = '';
 
+      const query = buildQuery({
+        id,
+        poster,
+        backdrop,
+        season,
+        episode,
+      });
+
       switch (type) {
         case 'movie':
-          deepLink = `cinemascope://movie?id=${id}`;
+          deepLink = `cinemascope://movie?${query}`;
           fallback = `https://www.themoviedb.org/movie/${id}`;
           break;
         case 'tv':
-          deepLink = `cinemascope://tv?id=${id}`;
+          deepLink = `cinemascope://tv?${query}`;
           fallback = `https://www.themoviedb.org/tv/${id}`;
           break;
         case 'season':
-          const seasonNum = parts[2];
-          deepLink = `cinemascope://season?id=${id}&season=${seasonNum}`;
-          fallback = `https://www.themoviedb.org/tv/${id}/season/${seasonNum}`;
+          deepLink = `cinemascope://season?${query}`;
+          fallback = `https://www.themoviedb.org/tv/${id}/season/${season}`;
           break;
         case 'episode':
-          const season = parts[2];
-          const episode = parts[3];
-          deepLink = `cinemascope://episode?id=${id}&season=${season}&episode=${episode}`;
+          deepLink = `cinemascope://episode?${query}`;
           fallback = `https://www.themoviedb.org/tv/${id}/season/${season}/episode/${episode}`;
           break;
         case 'person':
-          deepLink = `cinemascope://person?id=${id}`;
+          deepLink = `cinemascope://person?${query}`;
           fallback = `https://www.themoviedb.org/person/${id}`;
           break;
         case 'collection':
-          deepLink = `cinemascope://collection?id=${id}`;
+          deepLink = `cinemascope://collection?${query}`;
           fallback = `https://www.themoviedb.org/collection/${id}`;
           break;
         default:
@@ -72,10 +80,8 @@
           return;
       }
 
-      // Try to open the app
       window.location.href = deepLink;
 
-      // Set fallback after short delay
       setTimeout(() => {
         window.location.href = fallback;
       }, 1500);
